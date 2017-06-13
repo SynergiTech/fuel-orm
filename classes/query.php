@@ -49,6 +49,11 @@ class Query
 		static::$caching = (bool) $cache;
 	}
 
+	public static function getCaching()
+	{
+		return static::$caching;
+	}
+
 	/**
 	 * Create a new instance of the Query class.
 	 *

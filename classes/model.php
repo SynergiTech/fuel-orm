@@ -137,7 +137,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	/**
 	 * Create a new model instance
 	 */
-	public static function forge($data = array(), $new = true, $view = null, $cache = true)
+	public static function forge($data = array(), $new = true, $view = null, $cache = null)
 	{
 		return new static($data, $new, $view, $cache);
 	}
@@ -829,13 +829,20 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	protected $_view;
 
 	/**
+	 * @var  bool  whether this object should be cached
+	 */
+	protected $_cache = true;
+
+	/**
 	 * Constructor
 	 *
 	 * @param  array
 	 * @param  bool
 	 */
-	public function __construct($data = array(), $new = true, $view = null, $cache = true)
+	public function __construct($data = array(), $new = true, $view = null, $cache = null)
 	{
+		$this->_cache = $cache !== null ? $cache : \Orm\Query::getCaching();
+
 		// Make sure we get the correct dataformat passed
 		if ( ! is_array($data) and ! $data instanceOf \ArrayAccess)
 		{
@@ -1441,7 +1448,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		$this->_is_new = false;
 
 		$this->_original = $this->_data;
-		static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
+		$this->_cache and static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 
 		$this->observe('after_insert');
 
@@ -1509,7 +1516,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		$this->_original = $this->_data;
-		static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
+		$this->_cache and static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
 
 		// update the original property on success
 		$this->observe('after_update');
