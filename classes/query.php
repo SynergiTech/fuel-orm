@@ -337,7 +337,7 @@ class Query
 	 * @param   string  $base
 	 * @param   bool    $or
 	 */
-	protected function _parse_where_array(array $val, $base = '', $or = false)
+	public function _parse_where_array(array $val, $base = '', $or = false)
 	{
 		$or and $this->or_where_open();
 		foreach ($val as $k_w => $v_w)
@@ -1022,7 +1022,7 @@ class Query
 		}
 
 		$where_conditions = call_user_func($this->model.'::condition', 'where');
-		empty($where_conditions) or $this->where($where_conditions);
+		empty($where_conditions) or $this->_parse_where_array($where_conditions);
 
 		$where_backup = $this->where;
 		if ( ! empty($this->where))
