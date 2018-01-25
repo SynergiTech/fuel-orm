@@ -965,7 +965,16 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	public function _update_original($original = null)
 	{
 		$original = is_null($original) ? $this->_data : $original;
-		$this->_original = array_merge($this->_original, $original);
+
+		// bug #72369 https://bugs.php.net/bug.php?id=72369
+		// array_merge produces references, avoid using array_merge in >= 7 and < 7.0.9
+		if (defined('PHP_VERSION_ID') and PHP_VERSION_ID > 70000 and PHP_VERSION_ID < 70009) {
+			$this->_original = array_merge($this->_original, $original);
+		} else {
+			foreach ($original as $key => $val) {
+				$this->_original[$key] = $val;
+			}
+		}
 
 		$this->_update_original_relations();
 	}
