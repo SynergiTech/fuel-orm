@@ -242,11 +242,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	public static function cached_object($obj, $class = null)
 	{
 		$class = $class ?: get_called_class();
-
+		$hash = static::hash_class($class);
 		$id    = (is_int($obj) or is_string($obj)) ? (string) $obj : $class::implode_pk($obj);
 
-		$result = ( ! empty(static::$_cached_objects[$class][$id])) ? static::$_cached_objects[$class][$id] : false;
-
+		$result = ( ! empty(static::$_cached_objects[$hash][$id])) ? static::$_cached_objects[$hash][$id] : false;
 		return $result;
 	}
 
@@ -277,10 +276,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			// the entire cache
 			static::$_cached_objects = array();
 		}
-		elseif (array_key_exists($class, static::$_cached_objects))
+		elseif (array_key_exists(static::hash_class($class), static::$_cached_objects))
 		{
 			// the requested object cache
-			unset(static::$_cached_objects[$class]);
+			unset(static::$_cached_objects[static::hash_class($class)]);
 		}
 	}
 
@@ -650,11 +649,11 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				next($id);
 			}
 
-			if (array_key_exists(get_called_class(), static::$_cached_objects)
-			    and array_key_exists(static::implode_pk($cache_pk), static::$_cached_objects[get_called_class()])
+			if (array_key_exists(static::hash_class(get_called_class()), static::$_cached_objects)
+			    and array_key_exists(static::implode_pk($cache_pk), static::$_cached_objects[static::hash_class(get_called_class())])
 			    and (! isset($options['from_cache']) or $options['from_cache'] == true))
 			{
-				return static::$_cached_objects[get_called_class()][static::implode_pk($cache_pk)];
+				return static::$_cached_objects[static::hash_class(get_called_class())][static::implode_pk($cache_pk)];
 			}
 
 			array_key_exists('where', $options) and $where = array_merge($options['where'], $where);
@@ -707,6 +706,16 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	public static function min($key = null)
 	{
 		return static::query()->min($key ?: static::primary_key());
+	}
+
+	/**
+	 * Hashes a class
+	 * @param  string|object $class The class to hash
+	 * @return string        String cache key
+	 */
+	public static function hash_class($class)
+	{
+		return is_object($class) ? get_class($class) : $class;
 	}
 
 	public static function __callStatic($method, $args)
@@ -936,7 +945,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			$this->_update_original($this->_data);
 
 			// update the object cache if needed
-			$cache and static::$_cached_objects[get_class($this)][static::implode_pk($this->_data)] = $this;
+			$cache and static::$_cached_objects[static::hash_class($this)][static::implode_pk($this->_data)] = $this;
 
 			// mark the object as existing
 			$this->_is_new = false;
@@ -1281,7 +1290,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			$result = $this->_sanitize($property, $result);
 		}
-
 		return $result;
 	}
 
@@ -1504,7 +1512,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		$this->_is_new = false;
 
 		$this->_original = $this->_data;
-		$this->_cache and static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
+		$this->_cache and static::$_cached_objects[static::hash_class($this)][static::implode_pk($this)] = $this;
 
 		$this->observe('after_insert');
 
@@ -1527,7 +1535,6 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		{
 			return true;
 		}
-
 		$this->observe('before_update');
 
 		// Create the query and limit to primary key(s)
@@ -1572,7 +1579,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		}
 
 		$this->_original = $this->_data;
-		$this->_cache and static::$_cached_objects[get_class($this)][static::implode_pk($this)] = $this;
+		$this->_cache and static::$_cached_objects[static::hash_class($this)][static::implode_pk($this)] = $this;
 
 		// update the original property on success
 		$this->observe('after_update');
@@ -1665,10 +1672,10 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 			// Perform cleanup:
 			// remove from internal object cache, remove PK's, set to non saved object, remove db original values
-			if (array_key_exists(get_called_class(), static::$_cached_objects)
-				and array_key_exists(static::implode_pk($this), static::$_cached_objects[get_called_class()]))
+			if (array_key_exists(static::hash_class(get_called_class()), static::$_cached_objects)
+				and array_key_exists(static::implode_pk($this), static::$_cached_objects[static::hash_class(get_called_class())]))
 			{
-				unset(static::$_cached_objects[get_called_class()][static::implode_pk($this)]);
+				unset(static::$_cached_objects[static::hash_class(get_called_class())][static::implode_pk($this)]);
 			}
 			foreach ($this->primary_key() as $pk)
 			{

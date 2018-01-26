@@ -1454,9 +1454,9 @@ class Query
 				{
 					$f = substr($s[0], strpos($s[0], '.') + 1);
 				}
-				$new[$f] = $row[$s[1]];
 				if ( ! isset($obj->{$f}))
 				{
+					$new[$f] = $row[$s[1]];
 					$obj->{$f} = $new[$f];
 				}
 			}
