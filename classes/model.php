@@ -977,12 +977,12 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 
 		// bug #72369 https://bugs.php.net/bug.php?id=72369
 		// array_merge produces references, avoid using array_merge in >= 7 and < 7.0.9
-		if (defined('PHP_VERSION_ID') and PHP_VERSION_ID > 70000 and PHP_VERSION_ID < 70009) {
-			$this->_original = array_merge($this->_original, $original);
-		} else {
+		if (defined('PHP_VERSION_ID') and PHP_VERSION_ID >= 70000 and PHP_VERSION_ID < 70009) {
 			foreach ($original as $key => $val) {
 				$this->_original[$key] = $val;
 			}
+		} else {
+			$this->_original = array_merge($this->_original, $original);
 		}
 
 		$this->_update_original_relations();
