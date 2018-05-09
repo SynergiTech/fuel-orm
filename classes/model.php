@@ -66,6 +66,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	// protected static $_has_one;
 	// protected static $_belongs_to;
 	// protected static $_has_many;
+	// protected static $_morph_many;
 	// protected static $_many_many;
 	// protected static $_eav;
 
@@ -126,6 +127,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		'belongs_to'    => 'Orm\\BelongsTo',
 		'has_one'       => 'Orm\\HasOne',
 		'has_many'      => 'Orm\\HasMany',
+		'morph_many'      => 'Orm\\MorphMany',
 		'many_many'     => 'Orm\\ManyMany',
 	);
 
@@ -441,7 +443,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 	 * Get the class's relations
 	 *
 	 * @param bool $specific
-	 * @return  HasOne|HasMany|ManyMany|Belongsto|HasOne[]|HasMany[]|ManyMany[]|Belongsto[]
+	 * @return  HasOne|HasMany|MorphMany|ManyMany|Belongsto|HasOne[]|HasMany[]|MorphMany[]|ManyMany[]|Belongsto[]
 	 */
 	public static function relations($specific = false)
 	{
@@ -1191,7 +1193,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 		foreach ($this->relations() as $name => $rel)
 		{
 			// singular relations (hasone, belongsto) can't be copied, neither can HasMany
-			if ($rel->singular or $rel instanceof HasMany)
+			if ($rel->singular or $rel instanceof HasMany or $rel instanceof MorphMany)
 			{
 				unset($this->_data_relations[$name]);
 			}
@@ -2342,7 +2344,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				// EAV containers must be of the "Many type"
 				if ($rel instanceOf \Orm\HasOne or $rel instanceOf \Orm\BelongsTo )
 				{
-					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_class($this).'.');
+					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany", "MorphMany" or "ManyMany" relations in '.get_class($this).'.');
 				}
 
 				// determine attribute and value column names
@@ -2416,7 +2418,7 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 				// EAV containers must be of the "Many type"
 				if ($relation instanceOf \Orm\HasOne or $relation instanceOf \Orm\BelongsTo)
 				{
-					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany" or "ManyMany" relations in '.get_class($this).'.');
+					throw new \OutOfBoundsException('EAV containers can only be defined on "HasMany", "MorphMany" or "ManyMany" relations in '.get_class($this).'.');
 				}
 
 				// determine attribute and value column names
