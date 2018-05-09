@@ -17,6 +17,7 @@
 	'Orm\\Query'               => __DIR__.'/classes/query.php',
 	'Orm\\BelongsTo'           => __DIR__.'/classes/belongsto.php',
 	'Orm\\HasMany'             => __DIR__.'/classes/hasmany.php',
+	'Orm\\MorphMany'             => __DIR__.'/classes/morphmany.php',
 	'Orm\\HasOne'              => __DIR__.'/classes/hasone.php',
 	'Orm\\ManyMany'            => __DIR__.'/classes/manymany.php',
 	'Orm\\Relation'            => __DIR__.'/classes/relation.php',
