@@ -1,15 +1,13 @@
 <?php
 /**
- * Fuel
- *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
+ * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
  * @package    Fuel
- * @version    1.8
+ * @version    1.9-dev
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2017 Fuel Development Team
- * @link       http://fuelphp.com
+ * @copyright  2010 - 2019 Fuel Development Team
+ * @link       https://fuelphp.com
  */
 
 namespace Orm;
@@ -298,7 +296,7 @@ class Model_Temporal extends Model
 	 * @param array $options
 	 * @return type
 	 */
-	public static function find($id = null, array $options = array())
+	public static function find($id = null, array $options = null)
 	{
 		$timestamp_end_name = static::temporal_property('end_column');
 		$max_timestamp = static::temporal_property('max_timestamp');
@@ -310,6 +308,7 @@ class Model_Temporal extends Model
 			case 'last':
 				break;
 			default:
+				is_null($options) and $options = array();
 				$id = (array) $id;
 				$count = 0;
 				foreach(static::getNonTimestampPks() as $key)

@@ -1,15 +1,13 @@
 <?php
 /**
- * Fuel
- *
- * Fuel is a fast, lightweight, community driven PHP5 framework.
+ * Fuel is a fast, lightweight, community driven PHP 5.4+ framework.
  *
  * @package    Fuel
- * @version    1.8
+ * @version    1.9-dev
  * @author     Fuel Development Team
  * @license    MIT License
- * @copyright  2010 - 2017 Fuel Development Team
- * @link       http://fuelphp.com
+ * @copyright  2010 - 2019 Fuel Development Team
+ * @link       https://fuelphp.com
  */
 
 namespace Orm;
@@ -52,6 +50,8 @@ class Observer_Typing
 		'boolean' => 'bool',
 		'time_unix' => 'time',
 		'time_mysql' => 'time',
+		'datetime' => 'time',
+		'date' => 'time',
 	);
 
 	/**
@@ -177,15 +177,22 @@ class Observer_Typing
 			{
 				if (array_key_exists('null', $settings) and $settings['null'] === false)
 				{
-					// if a default is defined, return that instead
+					// if a default is defined, use that instead
 					if (array_key_exists('default', $settings))
 					{
-						return $settings['default'];
+						$value = $settings['default'];
 					}
-
-					throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
+					else
+					{
+						throw new InvalidContentType('The property "'.$column.'" cannot be NULL.');
+					}
 				}
 			}
+		}
+
+		 // still null? then let the DB deal with it
+		if ($value === null)
+		{
 			return $value;
 		}
 
@@ -316,8 +323,8 @@ class Observer_Typing
 		if (is_string($var) and static::$use_locale)
 		{
 			$locale_info = localeconv();
-			$var = str_replace($locale_info["mon_thousands_sep"], "", $var);
-			$var = str_replace($locale_info["mon_decimal_point"], ".", $var);
+			$var = str_replace($locale_info["thousands_sep"], "", $var);
+			$var = str_replace($locale_info["decimal_point"], ".", $var);
 		}
 
 		// was a specific float format specified?
@@ -331,7 +338,7 @@ class Observer_Typing
 			return sprintf('%.'.$decimal[1].'F', (float) $var);
 		}
 
-		return sprintf('%F', (float) $var);
+		return $var;
 	}
 
 	/**
@@ -630,11 +637,31 @@ class Observer_Typing
 			throw new InvalidContentType('Value must be an instance of the Date class.');
 		}
 
-		if ($settings['data_type'] == 'time_mysql')
+		// deal with datetime values
+		elseif ($settings['data_type'] == 'datetime')
+		{
+			return $var->format('%Y-%m-%d %H:%M:%S');
+		}
+
+		// deal with date values
+		elseif ($settings['data_type'] == 'date')
+		{
+			return $var->format('%Y-%m-%d');
+		}
+
+		// deal with time values
+		elseif ($settings['data_type'] == 'time')
+		{
+			return $var->format('%H:%M:%S');
+		}
+
+		// deal with config defined timestamps
+		elseif ($settings['data_type'] == 'time_mysql')
 		{
 			return $var->format('mysql');
 		}
 
+		// assume a timestamo is required
 		return $var->get_timestamp();
 	}
 
@@ -648,21 +675,74 @@ class Observer_Typing
 	 */
 	public static function type_time_decode($var, array $settings)
 	{
-		if ($settings['data_type'] == 'time_mysql')
+		// deal with a 'nulled' date, which according to some RDMBS is a valid enough to store?
+		if ($var == '0000-00-00 00:00:00')
 		{
-			// deal with a 'nulled' date, which according to MySQL is a valid enough to store?
-			if ($var == '0000-00-00 00:00:00')
+			if (array_key_exists('null', $settings) and $settings['null'] === false)
 			{
-				if (array_key_exists('null', $settings) and $settings['null'] === false)
-				{
-					throw new InvalidContentType('Value '.$var.' is not a valid date and can not be converted to a Date object.');
-				}
-				return null;
+				throw new InvalidContentType('Value '.$var.' is not a valid date and can not be converted to a Date object.');
 			}
-
-			return \Date::create_from_string($var, 'mysql');
+			return null;
 		}
 
-		return \Date::forge($var);
+		// deal with datetime values
+		elseif ($settings['data_type'] == 'datetime')
+		{
+			try
+			{
+				$var = \Date::create_from_string($var, '%Y-%m-%d %H:%M:%S');
+			}
+			catch (\UnexpectedValueException $e)
+			{
+				throw new InvalidContentType('Value '.$var.' is not a valid datetime and can not be converted to a Date object.');
+			}
+		}
+
+		// deal with date values
+		elseif ($settings['data_type'] == 'date')
+		{
+			try
+			{
+				$var = \Date::create_from_string($var, '%Y-%m-%d');
+			}
+			catch (\UnexpectedValueException $e)
+			{
+				throw new InvalidContentType('Value '.$var.' is not a valid date and can not be converted to a Date object.');
+			}
+		}
+
+		// deal with time values
+		elseif ($settings['data_type'] == 'time')
+		{
+			try
+			{
+				$var = \Date::create_from_string($var, '%H:%M:%S');
+			}
+			catch (\UnexpectedValueException $e)
+			{
+				throw new InvalidContentType('Value '.$var.' is not a valid time and can not be converted to a Date object.');
+			}
+		}
+
+		// deal with a configured datetime value
+		elseif ($settings['data_type'] == 'time_mysql')
+		{
+			try
+			{
+				$var = \Date::create_from_string($var, 'mysql');
+			}
+			catch (\UnexpectedValueException $e)
+			{
+				throw new InvalidContentType('Value '.$var.' is not a valid mysql datetime and can not be converted to a Date object.');
+			}
+		}
+
+		// else assume it is a numeric timestamp
+		else
+		{
+			$var = \Date::forge($var);
+		}
+
+		return $var;
 	}
 }
