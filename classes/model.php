@@ -2219,13 +2219,9 @@ class Model implements \ArrayAccess, \Iterator, \Sanitization
 			}
 			else
 			{
-				if ( ! in_array(get_class($rel), static::$to_array_references))
-				{
-					if (is_null($rel))
-					{
-						$array[$name] = null;
-					}
-					else
+				if ($rel === null) {
+					$array[$name] = null;
+				} elseif ( ! in_array(get_class($rel), static::$to_array_references)) {
 					{
 						static::$to_array_references[] = get_class($rel);
 						$array[$name] = $rel->to_array($custom, true, $eav);
